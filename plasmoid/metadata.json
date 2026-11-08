@@ -1,0 +1,21 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "svitlovyk"
+            }
+        ],
+        "Category": "System Information",
+        "Description": "BLUETTI power station state from bluetti-power-watch: grid, battery, outage",
+        "Description[uk]": "Стан станції BLUETTI зі сторожа bluetti-power-watch: світло, заряд, вимкнення",
+        "Icon": "battery-100-charging",
+        "Id": "io.github.goldhak.bluettipowerwatch",
+        "License": "MIT",
+        "Name": "BLUETTI power watch",
+        "Name[uk]": "Станція BLUETTI",
+        "Version": "0.1.0",
+        "Website": "https://github.com/goldhak/bluetti-power-watch"
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

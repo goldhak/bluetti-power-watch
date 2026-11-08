@@ -1,0 +1,107 @@
+# Maintainer: svitlovyk <https://github.com/goldhak/bluetti-power-watch>
+
+pkgname=bluetti-power-watch
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Keeps a Linux PC going through a blackout on a BLUETTI power station (with a KDE Plasma widget)"
+arch=('any')
+url="https://github.com/goldhak/bluetti-power-watch"
+license=('MIT' 'Apache-2.0')
+depends=(
+  'bluez'
+  'python'
+  'python-async-timeout'
+  'python-bleak'
+  'python-crcmod'
+  'python-cryptography'
+  'python-dbus-fast'
+  'python-pyasn1'
+)
+makedepends=('python-build' 'python-installer' 'python-setuptools' 'python-wheel')
+checkdepends=('python-pytest')
+optdepends=(
+  'power-profiles-daemon: power saving mode during an outage'
+  'libnotify: desktop notifications'
+  'ddcutil: lower monitor brightness during an outage'
+  'bluez-utils: lets bleak detect the BlueZ version (otherwise it logs a warning)'
+  'plasma-workspace: KDE Plasma widget'
+)
+
+# bluetti-bt-lib and the Bluetooth helpers it needs are not in the Arch
+# repositories, and their AUR packages are orphaned and fail to build. They are
+# shipped privately in /usr/lib/bluetti-power-watch/vendor (pure Python wheels).
+_wheels=(
+  'bluetti_bt_lib-0.1.8-py3-none-any.whl'
+  'bleak_retry_connector-4.7.1-py3-none-any.whl'
+  'bluetooth_adapters-2.4.0-py3-none-any.whl'
+  'aiooui-0.1.11-py3-none-any.whl'
+  'usb_devices-0.5.1-py3-none-any.whl'
+  'uart_devices-0.1.1-py3-none-any.whl'
+)
+_pypi=https://files.pythonhosted.org/packages
+source=(
+  "$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
+  "$_pypi/1b/68/fd31c1df5d8f622b3d559168c6acdde799f35dd2b2c15bcf2ffb80efbbe4/${_wheels[0]}"
+  "$_pypi/90/ec/3b503e27e65872ac5ae213ee913b5509e461bb96b1d495ae2f72800c4a85/${_wheels[1]}"
+  "$_pypi/8c/ba/f11151a72f782bf24908c2b57163a2ff854024594c4ff3d04f1c47f40ed0/${_wheels[2]}"
+  "$_pypi/4c/a8/5dd74c2dad63e66ea9b0caf67abaa6ce2ae84207346141b3952e6c703290/${_wheels[3]}"
+  "$_pypi/3d/12/f8dd0bd25e9e2ab747b47ae4efed08de75f595f6136a71bafaf3db0c47ed/${_wheels[4]}"
+  "$_pypi/12/64/edf33c2d7fba7d6bf057c9dc4235bfc699517ea4c996240a1a9c2bf51c29/${_wheels[5]}"
+)
+noextract=("${_wheels[@]}")
+sha256sums=('SKIP'
+            'ac6ecae68cb7838f41246b0d6e4f08968e569a09ab2858e6d7e498a38b976a9d'
+            '75b4cb3f69955123121d860348d2c43da638a0f3211f2cb6197d717edbd6f47f'
+            'f2841c49e8750658ecb8c1d46d2c05a9de4740362eb83e3e7e501d3092c0377e'
+            '531e808bba926d80213413202243754a125a100b3e7912dadb3cd3f921e1665d'
+            'e77e7972b5ac6a883b3778b0273d9582c5b8ae847ac78fba3d080dd4a4cc69ad'
+            '55bc8cce66465e90b298f0910e5c496bc7be021341c5455954cf61c6253dc123')
+
+prepare() {
+  rm -rf vendor
+  mkdir vendor
+  local wheel
+  for wheel in "${_wheels[@]}"; do
+    bsdtar -xf "$wheel" -C vendor
+  done
+}
+
+build() {
+  cd "$pkgname-$pkgver"
+  python -m build --wheel --no-isolation
+}
+
+check() {
+  cd "$pkgname-$pkgver"
+  PYTHONPATH="$srcdir/vendor" python -m pytest -q -p no:cacheprovider
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  python -m installer --destdir="$pkgdir" dist/*.whl
+
+  local vendor="$pkgdir/usr/lib/$pkgname/vendor"
+  install -d "$vendor"
+  cp -r "$srcdir/vendor/." "$vendor/"
+  python -m compileall -q -s "$pkgdir" -p / "$vendor"
+
+  local license dist
+  find "$srcdir/vendor" -path '*.dist-info/*' \( -iname 'LICENSE*' -o -iname 'COPYING*' \) -type f |
+    while read -r license; do
+      dist="${license#"$srcdir/vendor/"}"
+      dist="${dist%%.dist-info/*}"
+      install -Dm644 "$license" "$pkgdir/usr/share/licenses/$pkgname/vendor/$dist/$(basename "$license")"
+    done
+
+  install -Dm644 systemd/bluetti-power-watch.service \
+    "$pkgdir/usr/lib/systemd/user/bluetti-power-watch.service"
+
+  local plasmoid="$pkgdir/usr/share/plasma/plasmoids/io.github.goldhak.bluettipowerwatch"
+  install -Dm644 plasmoid/metadata.json "$plasmoid/metadata.json"
+  find plasmoid/contents -type f | while read -r file; do
+    install -Dm644 "$file" "$plasmoid/${file#plasmoid/}"
+  done
+
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 README.md README.uk.md -t "$pkgdir/usr/share/doc/$pkgname/"
+}

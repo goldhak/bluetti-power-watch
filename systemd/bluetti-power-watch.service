@@ -1,0 +1,12 @@
+[Unit]
+Description=BLUETTI power watch: power saving and safe shutdown during a blackout
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/bluetti-power-watch run
+Environment=PYTHONUNBUFFERED=1
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=default.target
