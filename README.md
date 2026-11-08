@@ -43,10 +43,19 @@ the battery last longer while the power is out.
 
 ## Install
 
-From the AUR, with any helper:
+From the AUR, with any helper (the package is on its way there: new AUR
+accounts are paused at the moment):
 
 ```sh
 paru -S bluetti-power-watch
+```
+
+Without the AUR, from this repository (the same recipe):
+
+```sh
+git clone https://github.com/goldhak/bluetti-power-watch.git
+cd bluetti-power-watch/packaging/aur/bluetti-power-watch
+makepkg -si
 ```
 
 ## Setup

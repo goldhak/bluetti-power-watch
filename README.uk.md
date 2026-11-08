@@ -43,10 +43,19 @@
 
 ## Встановлення
 
-З AUR будь-яким помічником:
+З AUR будь-яким помічником (пакет на шляху туди: реєстрацію нових облікових
+записів в AUR зараз призупинено):
 
 ```sh
 paru -S bluetti-power-watch
+```
+
+Без AUR, з цього репозиторію (той самий рецепт):
+
+```sh
+git clone https://github.com/goldhak/bluetti-power-watch.git
+cd bluetti-power-watch/packaging/aur/bluetti-power-watch
+makepkg -si
 ```
 
 ## Налаштування
